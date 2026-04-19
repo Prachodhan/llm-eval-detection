@@ -1,10 +1,18 @@
 from fastapi import FastAPI
-from app.api.v1.endpoints.health import router as health_router
-from app.api.v1.endpoints.detect import router as detect_router
+from contextlib import asynccontextmanager
+from app.models.model_loader import ModelLoader
+from app.api.v1.endpoints import detect, health
 
 
-app = FastAPI(title="LLM Eval Detection")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    ModelLoader.load()
+    print("Model loaded")
 
-app.include_router(health_router, prefix="/v1")
+    yield
 
-app.include_router(detect_router, prefix="/v1")
+
+app = FastAPI(lifespan=lifespan)
+
+app.include_router(detect.router, prefix="/v1")
+app.include_router(health.router, prefix="/v1")
